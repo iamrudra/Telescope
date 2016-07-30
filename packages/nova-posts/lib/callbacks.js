@@ -106,8 +106,8 @@ Posts.before.update(function (userId, doc, fieldNames, modifier) {
  */
 function PostsNewUserCheck (post, user) {
   // check that user can post
-  if (!user || !Users.can.post(user))
-    throw new Meteor.Error(601, __('you_need_to_login_or_be_invited_to_post_new_stories'));
+  if (!user || !Users.canDo(user, "posts.new"))
+    throw new Meteor.Error(601, 'you_need_to_login_or_be_invited_to_post_new_stories');
   return post;
 }
 Telescope.callbacks.add("posts.new.method", PostsNewUserCheck);
@@ -117,7 +117,7 @@ Telescope.callbacks.add("posts.new.method", PostsNewUserCheck);
  */
 function PostsNewRateLimit (post, user) {
 
-  if(!Users.is.admin(user)){
+  if(!Users.isAdmin(user)){
 
     var timeSinceLastPost = Users.timeSinceLast(user, Posts),
       numberOfPostsInPast24Hours = Users.numberOfItemsInPast24Hours(user, Posts),
@@ -155,16 +155,16 @@ function PostsNewSubmittedPropertiesCheck (post, user) {
   _.keys(post).forEach(function (fieldName) {
 
     var field = schema[fieldName];
-    if (!Users.can.submitField(user, field)) {
-      throw new Meteor.Error("disallowed_property", __('disallowed_property_detected') + ": " + fieldName);
+    if (!Users.canSubmitField (user, field)) {
+      throw new Meteor.Error("disallowed_property", 'disallowed_property_detected' + ": " + fieldName);
     }
 
   });
-
+  // note: not needed there anymore, this is already set in the next callback 'posts.new.sync' with other related properties (status, createdAt)
   // if no post status has been set, set it now
-  if (!post.status) {
-    post.status = Posts.getDefaultStatus(user);
-  }
+  // if (!post.status) {
+  //   post.status = Posts.getDefaultStatus(user);
+  // }
 
   // if no userId has been set, default to current user id
   if (!post.userId) {
@@ -197,13 +197,18 @@ function PostsNewRequiredPropertiesCheck (post, user) {
   const defaultProperties = {
     createdAt: new Date(),
     author: Users.getDisplayNameById(post.userId),
-    status: Posts.getDefaultStatus()
+    status: Posts.getDefaultStatus(user)
   };
 
   post = _.extend(defaultProperties, post);
 
   // generate slug
   post.slug = Telescope.utils.slugify(post.title);
+
+  // post is not pending and has been scheduled to be posted in the future by a moderator/admin
+  if (post.status !== Posts.config.STATUS_PENDING && post.postedAt && post.postedAt > post.createdAt) {
+    post.status = Posts.config.STATUS_SCHEDULED;
+  }
 
   // if post is approved but doesn't have a postedAt date, give it a default date
   // note: pending posts get their postedAt date only once theyre approved
@@ -214,6 +219,15 @@ function PostsNewRequiredPropertiesCheck (post, user) {
   return post;
 }
 Telescope.callbacks.add("posts.new.sync", PostsNewRequiredPropertiesCheck);
+
+/**
+ * @summary Set the post's isFuture to true if necessary
+ */
+function PostsNewSetFuture (post, user) {
+  post.isFuture = post.postedAt.getTime() > post.createdAt.getTime() + 1000; // round up to the second
+  return post;
+}
+Telescope.callbacks.add("posts.new.sync", PostsNewSetFuture);
 
 // ------------------------------------- posts.new.async -------------------------------- //
 
@@ -269,7 +283,7 @@ Telescope.callbacks.add("posts.new.async", PostsNewNotifications);
 
 function PostsEditUserCheck (modifier, post, user) {
   // check that user can edit document
-  if (!user || !Users.can.edit(user, post)) {
+  if (!user || !Users.canEdit(user, post)) {
     throw new Meteor.Error(601, 'sorry_you_cannot_edit_this_post');
   }
   return modifier;
@@ -285,8 +299,8 @@ function PostsEditSubmittedPropertiesCheck (modifier, post, user) {
     _.keys(operation).forEach(function (fieldName) {
 
       var field = schema[fieldName];
-      if (!Users.can.editField(user, field, post)) {
-        throw new Meteor.Error("disallowed_property", __('disallowed_property_detected') + ": " + fieldName);
+      if (!Users.canEditField(user, field, post)) {
+        throw new Meteor.Error("disallowed_property", 'disallowed_property_detected' + ": " + fieldName);
       }
 
     });
@@ -312,19 +326,30 @@ function PostsEditForceStickyToFalse (modifier, post) {
 }
 Telescope.callbacks.add("posts.edit.sync", PostsEditForceStickyToFalse);
 
-// ------------------------------------- posts.edit.async -------------------------------- //
+/**
+ * @summary Set status
+ */
+function PostsEditSetIsFuture (modifier, post) {
+  // if a post's postedAt date is in the future, set isFuture to true
+  modifier.$set.isFuture = modifier.$set.postedAt.getTime() > new Date().getTime() + 1000;
+  return modifier;
+}
+Telescope.callbacks.add("posts.edit.sync", PostsEditSetIsFuture);
 
 /**
  * @summary Set postedAt date
  */
-function PostsEditSetPostedAt (post, oldPost) {
+function PostsEditSetPostedAt (modifier, post) {
   // if post is approved but doesn't have a postedAt date, give it a default date
   // note: pending posts get their postedAt date only once theyre approved
   if (Posts.isApproved(post) && !post.postedAt) {
-    Posts.update(post._id, {$set:{postedAt: new Date()}});
+    modifier.$set.postedAt = new Date();
   }
+  return modifier;
 }
-Telescope.callbacks.add("posts.edit.async", PostsEditSetPostedAt);
+Telescope.callbacks.add("posts.edit.sync", PostsEditSetPostedAt);
+
+// ------------------------------------- posts.edit.async -------------------------------- //
 
 function PostsEditRunPostApprovedCallbacks (post, oldPost) {
   var now = new Date();

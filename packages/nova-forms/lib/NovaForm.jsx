@@ -116,6 +116,11 @@ class NovaForm extends Component{
         field.group = fieldSchema.group;
       }
 
+      // add document if the control is a React component (cannot access it through the context)
+      if (typeof fieldSchema.control === "function") {
+        field.document = this.getDocument();
+      }
+
       return field;
 
     });
@@ -301,6 +306,9 @@ class NovaForm extends Component{
   // submit form handler
   submitForm(data) {
     this.setState({disabled: true});
+
+    // mutate data with values not caught by formsy submit handler (ex: datetimepicker)
+    data = {...data, ...this.state.currentValues};
 
     const fields = this.getFieldNames();
 

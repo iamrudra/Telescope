@@ -122,7 +122,7 @@ Meteor.methods({
   },
   generateThumbnail: function (post) {
     check(post, Posts.simpleSchema());
-    if (Users.can.edit(Meteor.user(), post)) {
+    if (Users.canEdit(Meteor.user(), post)) {
       regenerateThumbnail(post);
     }
   },
@@ -130,7 +130,7 @@ Meteor.methods({
     // mode = "generate" : generate thumbnails only for all posts that don't have one
     // mode = "all" : regenerate thumbnais for all posts
       
-    if (Users.is.admin(Meteor.user())) {
+    if (Users.isAdmin(Meteor.user())) {
       
       console.log("// Generating thumbnails…")
       

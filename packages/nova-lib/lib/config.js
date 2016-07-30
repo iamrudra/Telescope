@@ -5,7 +5,7 @@
 
 Telescope = {};
 
-Telescope.VERSION = '0.26.4-nova';
+Telescope.VERSION = '0.26.5-nova';
 
 // ------------------------------------- Config -------------------------------- //
 
@@ -71,4 +71,11 @@ Telescope.routes = {
     const addedRoutes = Array.isArray(routeOrRouteArray) ? routeOrRouteArray : [routeOrRouteArray];
     this.routes = this.routes.concat(addedRoutes);
   }
+}
+
+// ------------------------------------- Head Tags -------------------------------- //
+
+Telescope.headtags = {
+  meta: [],
+  link: []
 }

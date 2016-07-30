@@ -1,3 +1,5 @@
+import Users from 'meteor/nova:users';
+
 // The equation to determine voting power. Defaults to returning 1 for everybody
 Telescope.getVotePower = function (user) {
   return 1;
@@ -9,8 +11,8 @@ Telescope.operateOnItem = function (collection, itemId, user, operation) {
 
   var item = collection.findOne(itemId);
   var votePower = Telescope.getVotePower(user);
-  var hasUpvotedItem = user.hasUpvotedItem(item);
-  var hasDownvotedItem = user.hasDownvotedItem(item);
+  var hasUpvotedItem = user.hasUpvoted(item);
+  var hasDownvotedItem = user.hasDownvoted(item);
   var update = {};
 
   // console.log(collection)
@@ -22,7 +24,7 @@ Telescope.operateOnItem = function (collection, itemId, user, operation) {
   if (
     !item ||
     !user || 
-    !user.canVote() || 
+    !Users.canDo(user, `${item.getCollectionName()}.${operation}`) || 
     operation === "upvote" && hasUpvotedItem ||
     operation === "downvote" && hasDownvotedItem
   ) {

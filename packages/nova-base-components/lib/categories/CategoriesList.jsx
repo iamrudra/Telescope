@@ -42,7 +42,7 @@ class CategoriesList extends Component {
           <Modal.Title><FormattedMessage id="categories.edit"/></Modal.Title>
         </Modal.Header>        
         <Modal.Body>
-          <ContextPasser currentUser={this.context.currentUser} messages={this.context.messages} closeCallback={this.closeModal}>
+          <ContextPasser currentUser={this.context.currentUser} messages={this.context.messages} actions={this.context.actions} closeCallback={this.closeModal}>
             <Telescope.components.CategoriesEditForm category={category}/>
           </ContextPasser>
         </Modal.Body>
@@ -99,7 +99,7 @@ class CategoriesList extends Component {
             </LinkContainer>
           </div>
           {categories && categories.length > 0 ? categories.map((category, index) => <Telescope.components.Category key={index} category={category} index={index} openModal={_.partial(this.openCategoryEditModal, index)}/>) : null}
-          {Users.is.admin(this.context.currentUser) ? this.renderCategoryNewButton() : null}
+          {Users.canDo(this.context.currentUser, "categories.new") ? this.renderCategoryNewButton() : null}
         </DropdownButton>
         <div>
           {/* modals cannot be inside DropdownButton component (see GH issue) */}
@@ -117,6 +117,7 @@ CategoriesList.propTypes = {
 }
 
 CategoriesList.contextTypes = {
+  actions: React.PropTypes.object,
   currentUser: React.PropTypes.object,
   messages: React.PropTypes.object,
 };

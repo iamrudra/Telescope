@@ -71,14 +71,14 @@ Comments.before.update(function (userId, doc, fieldNames, modifier) {
 
 function CommentsNewUserCheck (comment, user) {
   // check that user can post
-  if (!user || !Users.can.comment(user))
-    throw new Meteor.Error(601, __('you_need_to_login_or_be_invited_to_post_new_comments'));
+  if (!user || !Users.canDo(user, "comments.new"))
+    throw new Meteor.Error(601, 'you_need_to_login_or_be_invited_to_post_new_comments');
   return comment;
 }
 Telescope.callbacks.add("comments.new.method", CommentsNewUserCheck);
 
 function CommentsNewRateLimit (comment, user) {
-  if (!Users.is.admin(user)) {
+  if (!Users.isAdmin(user)) {
     var timeSinceLastComment = Users.timeSinceLast(user, Comments),
         commentInterval = Math.abs(parseInt(Telescope.settings.get('commentInterval',15)));
     // check that user waits more than 15 seconds between comments
@@ -103,8 +103,8 @@ function CommentsNewSubmittedPropertiesCheck (comment, user) {
       // ok
     } else {
       var field = schema[fieldName];
-      if (!Users.can.submitField(user, field)) {
-        throw new Meteor.Error("disallowed_property", __('disallowed_property_detected') + ": " + fieldName);
+      if (!Users.canSubmitField (user, field)) {
+        throw new Meteor.Error("disallowed_property", 'disallowed_property_detected' + ": " + fieldName);
       }
     }
 
@@ -253,7 +253,7 @@ Telescope.callbacks.add("comments.new.async", CommentsNewNotifications);
 // ------------------------------------- comments.edit.method -------------------------------- //
 
 function CommentsEditUserCheck (modifier, comment, user) {
-  if (!user || !Users.can.edit(user, comment)) {
+  if (!user || !Users.canEdit(user, comment)) {
     throw new Meteor.Error(601, 'sorry_you_cannot_edit_this_comment');
   }
   return modifier;
@@ -269,8 +269,8 @@ function CommentsEditSubmittedPropertiesCheck (modifier, comment, user) {
     _.keys(operation).forEach(function (fieldName) {
 
       var field = schema[fieldName];
-      if (!Users.can.editField(user, field, comment)) {
-        throw new Meteor.Error("disallowed_property", __('disallowed_property_detected') + ": " + fieldName);
+      if (!Users.canEditField(user, field, comment)) {
+        throw new Meteor.Error("disallowed_property", 'disallowed_property_detected' + ": " + fieldName);
       }
 
     });

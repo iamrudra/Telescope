@@ -1,6 +1,9 @@
 import Users from './collection.js';
 import moment from 'moment';
 
+Users.helpers({getCollection: () => Users});
+Users.helpers({getCollectionName: () => "users"});
+
 ////////////////////
 //  User Getters  //
 ////////////////////
@@ -144,21 +147,6 @@ Users.helpers({getEmailHash: function () {return Users.getEmailHash(this);}});
 Users.getEmailHashById = function (userId) {return Users.getEmailHash(Meteor.users.findOne(userId));};
 
 /**
- * @summary Check if a user's profile is complete
- * @param {Object} user
- */
-Users.userProfileComplete = function (user) {
-  for (var i = 0; i < Telescope.callbacks.profileCompletedChecks.length; i++) {
-    if (!Telescope.callbacks.profileCompletedChecks[i](user)) {
-      return false;
-    }
-  }
-  return true;
-};
-Users.helpers({userProfileComplete: function () {return Users.userProfileComplete(this);}});
-Users.userProfileCompleteById = function (userId) {return Users.userProfileComplete(Meteor.users.findOne(userId));};
-
-/**
  * @summary Get a user setting
  * @param {Object} user
  * @param {String} settingName
@@ -179,25 +167,41 @@ Users.getSetting = function (user, settingName, defaultValue) {
 };
 Users.helpers({getSetting: function (settingName, defaultValue) {return Users.getSetting(this, settingName, defaultValue);}});
 
-/**
- * @summary Check if a user has upvoted a post
- * @param {Object} user
- * @param {Object} post
- */
-Users.hasUpvoted = function (user, post) {
-  return user && _.include(post.upvoters, user._id);
-};
-Users.helpers({hasUpvoted: function (post) {return Users.hasUpvoted(this, post);}});
+////////////////////
+//  User Checks   //
+////////////////////
 
 /**
- * @summary Check if a user has downvoted a post
+ * @summary Check if the user has completed their profile.
  * @param {Object} user
- * @param {Object} post
  */
-Users.hasDownvoted = function (user, post) {
-  return user && _.include(post.downvoters, user._id);
+Users.hasCompletedProfile = function (user) {
+  return _.every(Users.getRequiredFields(), function (fieldName) {
+    return !!Telescope.getNestedProperty(user, fieldName);
+  });
 };
-Users.helpers({hasDownvoted: function (post) {return Users.hasDownvoted(this, post);}});
+Users.helpers({hasCompletedProfile: function () {return Users.hasCompletedProfile(this);}});
+Users.hasCompletedProfileById = function (userId) {return Users.hasCompletedProfile(Meteor.users.findOne(userId));};
+
+/**
+ * @summary Check if a user has upvoted a document
+ * @param {Object} user
+ * @param {Object} document
+ */
+Users.hasUpvoted = function (user, document) {
+  return user && _.include(document.upvoters, user._id);
+};
+Users.helpers({hasUpvoted: function (document) {return Users.hasUpvoted(this, document);}});
+
+/**
+ * @summary Check if a user has downvoted a document
+ * @param {Object} user
+ * @param {Object} document
+ */
+Users.hasDownvoted = function (user, document) {
+  return user && _.include(document.downvoters, user._id);
+};
+Users.helpers({hasDownvoted: function (document) {return Users.hasDownvoted(this, document);}});
 
 ///////////////////
 // Other Helpers //
@@ -239,22 +243,11 @@ Users.getProperty = function (object, property) {
   }
 };
 
-Users.updateAdmin = function (userId, admin) {
-  Users.update(userId, {$set: {isAdmin: admin}});
-};
+////////////////////
+// More Helpers   //
+////////////////////
 
-Users.adminUsers = function (options) {
-  return this.find({isAdmin : true}, options).fetch();
-};
-
-Users.getCurrentUserEmail = function () {
-  return Meteor.user() ? Users.getEmail(Meteor.user()) : '';
-};
-
-Users.findByEmail = function (email) {
-  return Meteor.users.findOne({"telescope.email": email});
-};
-
+// helpers that don't take a user as argument
 
 /**
  * @summary @method Users.getRequiredFields
@@ -269,34 +262,15 @@ Users.getRequiredFields = function () {
   return fields;
 };
 
-/**
- * @summary Check if the user has completed their profile.
- * @param {Object} user
- */
-Users.hasCompletedProfile = function (user) {
-  return _.every(Users.getRequiredFields(), function (fieldName) {
-    return !!Telescope.getNestedProperty(user, fieldName);
-  });
+Users.adminUsers = function (options) {
+  return this.find({isAdmin : true}, options).fetch();
 };
-Users.helpers({hasCompletedProfile: function () {return Users.hasCompletedProfile(this);}});
-Users.hasCompletedProfileById = function (userId) {return Users.hasCompletedProfile(Meteor.users.findOne(userId));};
 
-/**
- * @summary Check if the user has upvoted an item before
- * @param {Object} user
- * @param {Object} item
- */
-Users.hasUpvotedItem = function (user, item) {
-  return item.upvoters && item.upvoters.indexOf(user._id) !== -1;
+Users.getCurrentUserEmail = function () {
+  return Meteor.user() ? Users.getEmail(Meteor.user()) : '';
 };
-Users.helpers({hasUpvotedItem: function (item) {return Users.hasUpvotedItem(this, item);}});
 
-/**
- * @summary Check if the user has downvoted an item before
- * @param {Object} user
- * @param {Object} item
- */
-Users.hasDownvotedItem = function (user, item) {
-  return item.downvoters && item.downvoters.indexOf(user._id) !== -1;
+Users.findByEmail = function (email) {
+  return Meteor.users.findOne({"telescope.email": email});
 };
-Users.helpers({hasDownvotedItem: function (item) {return Users.hasDownvotedItem(this, item);}});
+

@@ -4,15 +4,17 @@ import Users from 'meteor/nova:users';
 
 Meteor.methods({
   'newsletter.send': function () {
-    if(Users.is.adminById(this.userId))
+    if(Users.isAdminById(this.userId))
       return Newsletter.scheduleNextWithMailChimp(false);
   },
   'newsletter.test': function () {
-    if(Users.is.adminById(this.userId))
+    if(Users.isAdminById(this.userId))
       return Newsletter.scheduleNextWithMailChimp(true);
   },
   'newsletter.addUser'(user){
-    if (!user || !Users.can.editById(this.userId, user)) {
+    const currentUser = Users.findOne({_id: this.userId});
+    user = Users._transform(user);
+    if (!user || !Users.canEdit(currentUser, user)) {
       throw new Meteor.Error(601, 'sorry_you_cannot_edit_this_user');
     }
     
@@ -23,7 +25,9 @@ Meteor.methods({
     }
   },
   'newsletter.removeUser'(user) {
-    if (!user || !Users.can.editById(this.userId, user)) {
+    const currentUser = Users.findOne({_id: this.userId});
+    user = Users._transform(user);
+    if (!user || !Users.canEdit(currentUser, user)) {
       throw new Meteor.Error(601, 'sorry_you_cannot_edit_this_user');
     }
     

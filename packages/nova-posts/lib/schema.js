@@ -39,10 +39,21 @@ Posts.config.STATUS_REJECTED = 3;
 Posts.config.STATUS_SPAM = 4;
 Posts.config.STATUS_DELETED = 5;
 
-const adminGroup = {
-  name: "admin",
-  order: 2
-}
+Posts.formGroups = {
+  admin: {
+    name: "admin",
+    order: 2
+  }
+};
+
+// check if user can create a new post
+const canInsert = user => Users.canDo(user, "posts.new");
+
+// check if user can edit a post
+const canEdit = Users.canEdit;
+
+// check if user can edit *all* posts
+const canEditAll = user => Users.canDo(user, "posts.edit.all");
 
 /**
  * @summary Posts schema
@@ -71,11 +82,11 @@ Posts.schemaJSON = {
   postedAt: {
     type: Date,
     optional: true,
-    // insertableIf: Users.is.admin,
-    // editableIf: Users.is.admin,
+    insertableIf: canEditAll,
+    editableIf: canEditAll,
     publish: true,
     control: "datetime",
-    group: adminGroup
+    group: Posts.formGroups.admin
   },
   /**
     URL
@@ -84,8 +95,8 @@ Posts.schemaJSON = {
     type: String,
     optional: true,
     max: 500,
-    insertableIf: Users.is.memberOrAdmin,
-    editableIf: Users.is.ownerOrAdmin,
+    insertableIf: canInsert,
+    editableIf: canEdit,
     control: "text",
     publish: true,
     order: 10
@@ -97,8 +108,8 @@ Posts.schemaJSON = {
     type: String,
     optional: false,
     max: 500,
-    insertableIf: Users.is.memberOrAdmin,
-    editableIf: Users.is.ownerOrAdmin,
+    insertableIf: canInsert,
+    editableIf: canEdit,
     control: "text",
     publish: true,
     order: 20
@@ -118,8 +129,8 @@ Posts.schemaJSON = {
     type: String,
     optional: true,
     max: 3000,
-    insertableIf: Users.is.memberOrAdmin,
-    editableIf: Users.is.ownerOrAdmin,
+    insertableIf: canInsert,
+    editableIf: canEdit,
     control: "textarea",
     publish: true,
     order: 30
@@ -173,8 +184,8 @@ Posts.schemaJSON = {
   status: {
     type: Number,
     optional: true,
-    insertableIf: Users.is.admin,
-    editableIf: Users.is.admin,
+    insertableIf: canEditAll,
+    editableIf: canEditAll,
     control: "select",
     publish: true,
     autoValue: function () {
@@ -190,7 +201,15 @@ Posts.schemaJSON = {
       options: Posts.config.postStatuses,
       group: 'admin'
     },
-    group: adminGroup
+    group: Posts.formGroups.admin
+  },
+  /**
+    Whether a post is scheduled in the future or not
+  */
+  isFuture: {
+    type: Boolean,
+    optional: true,
+    publish: true
   },
   /**
     Whether the post is sticky (pinned to the top of posts lists)
@@ -199,11 +218,11 @@ Posts.schemaJSON = {
     type: Boolean,
     optional: true,
     defaultValue: false,
-    insertableIf: Users.is.admin,
-    editableIf: Users.is.admin,
+    insertableIf: canEditAll,
+    editableIf: canEditAll,
     control: "checkbox",
     publish: true,
-    group: adminGroup
+    group: Posts.formGroups.admin
   },
   /**
     Whether the post is inactive. Inactive posts see their score recalculated less often
@@ -247,8 +266,8 @@ Posts.schemaJSON = {
     type: String,
     optional: true,
     // regEx: SimpleSchema.RegEx.Id,
-    // insertableIf: Users.is.admin,
-    // editableIf: Users.is.admin,
+    // insertableIf: canEditAll,
+    // editableIf: canEditAll,
     control: "select",
     publish: true,
     autoform: {

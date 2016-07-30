@@ -2,6 +2,9 @@ import moment from 'moment';
 import Posts from './collection.js';
 import Users from 'meteor/nova:users';
 
+Posts.helpers({getCollection: () => Posts});
+Posts.helpers({getCollectionName: () => "posts"});
+
 //////////////////
 // Link Helpers //
 //////////////////
@@ -10,8 +13,9 @@ import Users from 'meteor/nova:users';
  * @summary Return a post's link if it has one, else return its post page URL
  * @param {Object} post
  */
-Posts.getLink = function (post, isAbsolute) {
-  return !!post.url ? Telescope.utils.getOutgoingUrl(post.url) : this.getPageUrl(post, isAbsolute);
+Posts.getLink = function (post, isAbsolute = false, isRedirected = true) {
+  const url = isRedirected ? Telescope.utils.getOutgoingUrl(post.url) : post.url;
+  return !!post.url ? url : this.getPageUrl(post, isAbsolute);
 };
 Posts.helpers({getLink: function (isAbsolute) {return Posts.getLink(this, isAbsolute);}});
 
@@ -67,9 +71,9 @@ Posts.helpers({getAuthorName: function () {return Posts.getAuthorName(this);}});
  * @param {Object} user
  */
 Posts.getDefaultStatus = function (user) {
-  var hasAdminRights = typeof user === 'undefined' ? false : Users.is.admin(user);
-  if (hasAdminRights || !Telescope.settings.get('requirePostsApproval', false)) {
-    // if user is admin, or else post approval is not required
+  const canPostApproved = typeof user === 'undefined' ? false : Users.canDo(user, "posts.new.approved");
+  if (!Telescope.settings.get('requirePostsApproval', false) || canPostApproved) {
+    // if user can post straight to "approved", or else post approval is not required
     return Posts.config.STATUS_APPROVED;
   } else {
     return Posts.config.STATUS_PENDING;
@@ -84,6 +88,16 @@ Posts.isApproved = function (post) {
   return post.status === Posts.config.STATUS_APPROVED;
 };
 Posts.helpers({isApproved: function () {return Posts.isApproved(this);}});
+
+/**
+ * @summary Check if a post is pending
+ * @param {Object} post
+ */
+Posts.isPending = function (post) {
+  return post.status === Posts.config.STATUS_PENDING;
+};
+Posts.helpers({isPending: function () {return Posts.isPending(this);}});
+
 
 /**
  * @summary Check to see if post URL is unique.
@@ -129,35 +143,39 @@ Posts.getThumbnailUrl = (post) => {
 };
 Posts.helpers({ getThumbnailUrl() { return Posts.getThumbnailUrl(this); } });
 
-///////////////////
-// Users Helpers //
-///////////////////
-
 /**
- * @summary Check if a given user can view a specific post
- * @param {Object} user - can be undefined!
+ * @summary Get URL for sharing on Twitter.
  * @param {Object} post
  */
-Users.can.viewPost = function (user, post) {
+Posts.getTwitterShareUrl = post => {
+  const via = Telescope.settings.get("twitterAccount", null) ? `&via=${Telescope.settings.get("twitterAccount")}` : "";
+  return `https://twitter.com/intent/tweet?text=${ encodeURIComponent(post.title) }%20${ encodeURIComponent(Posts.getLink(post, true)) }${via}`;
+};
+Posts.helpers({ getTwitterShareUrl() { return Posts.getTwitterShareUrl(this); } });
 
-  if (Users.is.admin(user)) {
-    return true;
-  } else {
+/**
+ * @summary Get URL for sharing on Facebook.
+ * @param {Object} post
+ */
+Posts.getFacebookShareUrl = post => {
+  return `https://www.facebook.com/sharer/sharer.php?u=${ encodeURIComponent(Posts.getLink(post, true)) }`;
+};
+Posts.helpers({ getFacebookShareUrl() { return Posts.getFacebookShareUrl(this); } });
 
-    switch (post.status) {
+/**
+ * @summary Get URL for sharing by Email.
+ * @param {Object} post
+ */
+Posts.getEmailShareUrl = post => {
+  const subject = `Interesting link: ${post.title}`;
+  const body = `I thought you might find this interesting:
 
-      case Posts.config.STATUS_APPROVED:
-        return Users.can.view(user);
-      
-      case Posts.config.STATUS_REJECTED:
-      case Posts.config.STATUS_SPAM:
-      case Posts.config.STATUS_PENDING: 
-        return Users.can.view(user) && Users.is.owner(user, post);
-      
-      case Posts.config.STATUS_DELETED:
-        return false;
-    
-    }
-  }
-}
-Users.helpers({canViewPost: function () {return Users.can.viewPost(this, post);}});
+${post.title}
+${Posts.getLink(post, true, false)}
+
+(found via ${Telescope.settings.get("siteUrl")})
+  `;
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
+Posts.helpers({ getEmailShareUrl() { return Posts.getEmailShareUrl(this); } });
+

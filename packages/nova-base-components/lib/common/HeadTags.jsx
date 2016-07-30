@@ -21,7 +21,7 @@ class HeadTags extends Component {
 			image = Telescope.utils.getSiteUrl() + image;
 		}
 
-		const meta = [
+		const meta = Telescope.headtags.meta.concat([
 			{ charset: "utf-8" },
 			{ name: "description", content: description },
 			// responsive
@@ -37,12 +37,12 @@ class HeadTags extends Component {
 			{ name: "twitter:image:src", content: image },
 			{ name: "twitter:title", content: title },
 			{ name: "twitter:description", content: description }
-		];
+		]);
 
-		const link = [
+		const link = Telescope.headtags.link.concat([
 			{ rel: "canonical", href: Telescope.utils.getSiteUrl() },
-			{ rel: "shortcut icon", href: Telescope.settings.get("favicon", "/img/favicon.ico") }
-		];
+			{ rel: "shortcut icon", href: Telescope.settings.get("faviconUrl", "/img/favicon.ico") }
+		]);
 
 		return (
 			<div>
