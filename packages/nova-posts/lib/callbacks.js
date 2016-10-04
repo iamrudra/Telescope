@@ -1,3 +1,4 @@
+import Telescope from 'meteor/nova:lib';
 import Posts from './collection.js'
 import marked from 'marked';
 import Users from 'meteor/nova:users';
@@ -82,6 +83,7 @@ Posts.before.update(function (userId, doc, fieldNames, modifier) {
 
 ### posts.edit.sync
 
+- PostsEditDuplicateLinksCheck
 - PostsEditForceStickyToFalse
 
 ### posts.edit.async
@@ -182,7 +184,7 @@ Telescope.callbacks.add("posts.new.method", PostsNewSubmittedPropertiesCheck);
  */
 function PostsNewDuplicateLinksCheck (post, user) {
   if(!!post.url) {
-    Posts.checkForSameUrl(post.url, user);
+    Posts.checkForSameUrl(post.url);
   }
   return post;
 }
@@ -224,7 +226,7 @@ Telescope.callbacks.add("posts.new.sync", PostsNewRequiredPropertiesCheck);
  * @summary Set the post's isFuture to true if necessary
  */
 function PostsNewSetFuture (post, user) {
-  post.isFuture = post.postedAt.getTime() > post.createdAt.getTime() + 1000; // round up to the second
+  post.isFuture = post.postedAt && post.postedAt.getTime() > post.createdAt.getTime() + 1000; // round up to the second
   return post;
 }
 Telescope.callbacks.add("posts.new.sync", PostsNewSetFuture);
@@ -312,6 +314,17 @@ Telescope.callbacks.add("posts.edit.method", PostsEditSubmittedPropertiesCheck);
 // ------------------------------------- posts.edit.sync -------------------------------- //
 
 /**
+ * @summary Check for duplicate links
+ */
+const PostsEditDuplicateLinksCheck = (modifier, post) => {
+  if(post.url !== modifier.$set.url && !!modifier.$set.url) {
+    Posts.checkForSameUrl(modifier.$set.url);
+  }
+  return modifier;
+};
+Telescope.callbacks.add("posts.edit.sync", PostsEditDuplicateLinksCheck);
+
+/**
  * @summary Force sticky to default to false when it's not specified
  * (simpleSchema's defaultValue does not work on edit, so do it manually in callback)
  */
@@ -331,7 +344,7 @@ Telescope.callbacks.add("posts.edit.sync", PostsEditForceStickyToFalse);
  */
 function PostsEditSetIsFuture (modifier, post) {
   // if a post's postedAt date is in the future, set isFuture to true
-  modifier.$set.isFuture = modifier.$set.postedAt.getTime() > new Date().getTime() + 1000;
+  modifier.$set.isFuture = modifier.$set.postedAt && modifier.$set.postedAt.getTime() > new Date().getTime() + 1000;
   return modifier;
 }
 Telescope.callbacks.add("posts.edit.sync", PostsEditSetIsFuture);

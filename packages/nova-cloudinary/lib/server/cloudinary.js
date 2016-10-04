@@ -1,3 +1,4 @@
+import Telescope from 'meteor/nova:lib';
 import cloudinary from "cloudinary";
 import Posts from "meteor/nova:posts";
 import Users from 'meteor/nova:users';
@@ -8,7 +9,8 @@ const uploadSync = Meteor.wrapAsync(Cloudinary.uploader.upload);
 Cloudinary.config({
   cloud_name: Telescope.settings.get("cloudinaryCloudName"),
   api_key: Telescope.settings.get("cloudinaryAPIKey"),
-  api_secret: Telescope.settings.get("cloudinaryAPISecret")
+  api_secret: Telescope.settings.get("cloudinaryAPISecret"),
+  secure: true,
 });
 
 const CloudinaryUtils = {

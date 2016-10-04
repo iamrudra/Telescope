@@ -89,6 +89,11 @@ class NovaForm extends Component{
           field.value = prefilledValue;
         }
       }
+      
+      // replace empty value, which has not been prefilled, by the default value from the schema
+      if (fieldSchema.defaultValue && field.value === "") {
+        field.value = fieldSchema.defaultValue;
+      }
 
       // add options if they exist
       if (fieldSchema.autoform && fieldSchema.autoform.options) {
@@ -307,8 +312,13 @@ class NovaForm extends Component{
   submitForm(data) {
     this.setState({disabled: true});
 
-    // mutate data with values not caught by formsy submit handler (ex: datetimepicker)
-    data = {...data, ...this.state.currentValues};
+    // complete the data with values from custom components which are not being catched by Formsy mixin
+    // note: it follows the same logic as NovaForm's getDocument method
+    data = { 
+      ...this.state.autofilledValues, // ex: can be values from EmbedlyURL or NewsletterSubscribe component
+      ...data, // original data generated thanks to Formsy
+      ...this.state.currentValues, // ex: can be values from DateTime component
+    };
 
     const fields = this.getFieldNames();
 
@@ -393,7 +403,7 @@ NovaForm.propTypes = {
   fields: React.PropTypes.arrayOf(React.PropTypes.string)
 }
 
-NovaForm.defaultPropTypes = {
+NovaForm.defaultProps = {
   layout: "horizontal"
 }
 

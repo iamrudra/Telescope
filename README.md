@@ -1,5 +1,7 @@
 # Telescope Nova
 
+> It's the [Hacktoberfest](https://hacktoberfest.digitalocean.com/), support & celebrate open-source! [Browse our issues](https://github.com/TelescopeJS/Telescope/issues?q=is%3Aissue+is%3Aopen+label%3Ahacktoberfest) and come contribute! 
+
 There are currently two distinct versions of Telescope: **Nova** and **Legacy**.
 
 **Nova** is the new, React-based version and all development will happen on this version going forward. It's used by the [master](https://github.com/TelescopeJS/Telescope/tree/master) and [devel](https://github.com/TelescopeJS/Telescope/tree/devel) branches.
@@ -41,25 +43,27 @@ Note that both versions use the same data format, so you can go back and forth b
 
 [Install Meteor](https://www.meteor.com/install):
 
-```
+```sh
 curl https://install.meteor.com/ | sh
 ```
 
 Clone this repository locally:
 
-```
+```sh
 git clone git@github.com:TelescopeJS/Telescope.git
 ```
 
+(or `https://github.com/TelescopeJS/Telescope.git`)
+
 Install the necessary NPM packages:
 
-```
+```sh
 npm install
 ```
 
 Then run the app with:
 
-```
+```sh
 meteor
 ```
 
@@ -109,7 +113,7 @@ The best ways to get support are [Telescope Meta](http://meta.telescopeapp.org) 
 
 ## Deployment
 
-The recommended way to deploy Nova is by using [MupX](https://github.com/arunoda/meteor-up/tree/mupx).
+The recommended way to deploy Nova is by using [Mup](https://github.com/kadirahq/meteor-up/), at least v1.0.3.
 
 ## Settings
 
@@ -130,7 +134,7 @@ Just like Settings, you can specify categories either via the in-app UI or via `
 
 To add new social login options, you'll first need to add your API keys to your `settings.json` file. For example:
 
-```
+```json
 "oAuth": {
   "twitter": {
     "consumerKey": "foo",
@@ -147,7 +151,7 @@ To add new social login options, you'll first need to add your API keys to your 
 
 Then, add the relevant Meteor package:
 
-```
+```sh
 meteor add accounts-twitter accounts-facebook
 ```
 
@@ -636,6 +640,8 @@ If you create a new internationalization package, let us know so we can add it h
 - [es-ES](https://atmospherejs.com/fcallem/nova-i18n-es-es)
 - [pl-PL](https://atmospherejs.com/lusch/nova-i18n-pl-pl)
 - [ru-RU](https://github.com/fortunto2/nova-i18n-ru-ru)
+- [de-DE](https://atmospherejs.com/fzeidler/nova-i18n-de-de)
+- [pt-BR](https://github.com/lukasag/nova-i18n-pt-br)
 
 ## Cheatsheet
 
@@ -644,4 +650,5 @@ You can access a dynamically generated cheatsheet of Nova's main functions at [h
 ## Third-Party Plugins
 
 - [Post By Feed](https://github.com/xavcz/nova-post-by-feed): register RSS feeds that will be fetched every 30 minutes to create new posts automatically.
-- [Nova-Slack](https://github.com/xavcz/nova-slack): A package that automatically sends your posts as messages to any connected Slack Team.
+- [Post To Slack](https://github.com/xavcz/nova-slack): A package that automatically sends your posts as messages to any connected Slack Team.
+- [Upload Images](https://github.com/xavcz/nova-forms-upload): A package that extends [nova:forms](https://github.com/TelescopeJS/Telescope/tree/master/packages/nova-forms) to upload images, like an avatar, to Cloudinary from a drop zone.

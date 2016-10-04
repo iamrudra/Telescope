@@ -1,3 +1,4 @@
+import Telescope from 'meteor/nova:lib';
 import React, { PropTypes, Component } from 'react';
 import FRC from 'formsy-react-components';
 const Input = FRC.Input;
@@ -60,11 +61,14 @@ class EmbedlyURL extends Component {
     };
 
     loadingStyle.display = this.state.loading ? "block" : "none";
+    
+    // see https://facebook.github.io/react/warnings/unknown-prop.html
+    const {document, updateCurrentValue, control, ...rest} = this.props;
 
     return (
       <div className="embedly-url-field" style={wrapperStyle}>
         <Input 
-          {...this.props}
+          {...rest}
           onBlur={this.handleBlur} 
           type="text"  
           ref={ref => this.input = ref}

@@ -1,3 +1,4 @@
+import Telescope from 'meteor/nova:lib';
 import Users from './collection.js';
 
 /**
@@ -15,12 +16,12 @@ class Group {
   }
 
   can(actions) {
-    actions = Array.isArray(actions) ? actions : actions;
+    actions = Array.isArray(actions) ? actions : [actions];
     this.actions = this.actions.concat(actions);
   }
 
   cannot(actions) {
-    actions = Array.isArray(actions) ? actions : actions;
+    actions = Array.isArray(actions) ? actions : [actions];
     this.actions = _.difference(this.actions, actions);
   }
 
@@ -98,7 +99,7 @@ Users.canDo = (user, action) => {
  */
 Users.canView = function (user, document) {
 
-  const status = _.findWhere(Posts.config.postStatuses, {value: document.status}).label;
+  const status = _.findWhere(Telescope.statuses, {value: document.status}).label;
   const collectionName = document.getCollectionName();
 
   if (!document) {
